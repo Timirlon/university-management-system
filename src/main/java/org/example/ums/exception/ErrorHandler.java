@@ -13,20 +13,20 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED) // 401
     public ErrorResponse handle(UnauthorizedException e) {
         log.warn(e.getMessage());
-        return new ErrorResponse(e.getMessage());
+        return new ErrorResponse("Authorization required.", e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.FORBIDDEN) // 403
     public ErrorResponse handle(ForbiddenAccessException e) {
         log.warn(e.getMessage());
-        return new ErrorResponse(e.getMessage());
+        return new ErrorResponse("Access denied.", e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND) // 404
     public ErrorResponse handle(NotFoundException e) {
         log.warn(e.getMessage());
-        return new ErrorResponse(e.getMessage());
+        return new ErrorResponse("Object not found.", e.getMessage());
     }
 }
