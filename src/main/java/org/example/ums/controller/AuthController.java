@@ -8,7 +8,7 @@ import org.example.ums.dto.auth.AuthResponse;
 import org.example.ums.dto.user.UserPostRequest;
 import org.example.ums.mapper.UserMapper;
 import org.example.ums.model.User;
-import org.example.ums.security.JwtUtil;
+import org.example.ums.util.JwtUtil;
 import org.example.ums.security.CustomUserDetails;
 import org.example.ums.service.UserService;
 import org.springframework.http.*;

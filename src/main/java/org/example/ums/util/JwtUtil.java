@@ -1,4 +1,4 @@
-package org.example.ums.security;
+package org.example.ums.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;

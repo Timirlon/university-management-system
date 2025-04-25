@@ -7,7 +7,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ums.security.CustomUserDetailsService;
-import org.example.ums.security.JwtUtil;
+import org.example.ums.util.JwtUtil;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.*;
