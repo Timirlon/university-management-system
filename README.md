@@ -1,6 +1,17 @@
 # University Management System
 
-A comprehensive Java-based application designed to streamline and automate the administrative and academic operations of universities. This system encompasses functionalities such as managing teacher and student databases, handling fee structures, processing examination results, and more.
+## Description
+
+The University Management System is a Spring-Boot web-application designed to simplify university administration by offering a centralized platform for managing academic operations. It features a RESTful API that handles user roles, course organization, and student enrollments - all secured through JWT authentication and role-based permissions.
+
+## Key Features:
+- User Management: Create, update, and manage user roles (STUDENT, TEACHER, ADMIN).
+
+- Course Management: Add, modify, or remove courses (FOR ADMINS), and track course details.
+
+- Enrollment System: Handle student enrollments in courses with full CRUD functionality. (FOR TEACHERS/ADMINS)
+
+- Security: Implements Spring Security and JWT for authentication and authorization.
 
 ## How to Run the Project
 
@@ -55,38 +66,43 @@ src/main/
 
 The application provides wide range of functionality by implementing the following endpoints:
 
+
 - **User Management:**
   - `GET /users` - Retrieve a list of all users
   - `GET /users/{id}` - Retrieve details of a specific users by id
-  - `POST /users` - Add a new user to database
-  - `PATCH /users/{id}` - Update user credentials
-  - `PATCH /users/role/{id}` - Update user role (e.g. STUDENT, TEACHER, ADMIN)
+  - `POST /users` - Add a new user to database (`Request Body` needed)
+  - `PATCH /users/{id}` - Update user credentials (`Request Body` needed)
+  - `PATCH /users/role/{id}?role={role}` - Update user role (e.g. STUDENT, TEACHER, ADMIN)
   - `DELETE /students/{id}` - Remove a student by id from system
 
 - **Course Management:**
   - `GET /courses` - Retrieve a list of all courses
   - `GET /users/{id}` - Retrieve details of a specific course by id
-  - `POST /courses` - Add a new course
-  - `PATCH /courses/{id}` - Update course information
+  - `POST /courses` - Add a new course (`Request Body` needed)
+  - `PATCH /courses/{id}` - Update course information (`Request Body` needed)
   - `DELETE /courses/{id}` - Remove a course
 
 - **Enrollment:**
   - `GET /enrollments` - Retrieve all enrollments
   - `GET /enrollments/{id}` - Retrieve details of a specific enrollment by id
-  - `POST /enrollments` - Enroll a student in a course
-  - `PATCH /enrollments/{id}` - Update enrollment information
+  - `POST /enrollments?student={studentId}&course={courseId}` - Enroll a student in a course
+  - `PATCH /enrollments/{id}?student={studentId}&course={courseId}` - Update enrollment information
   - `DELETE /enrollments/{id}` - Remove an enrollment
+
+- **Authentication**
+  - `POST /auth/register` - Registers and creates a new account
+  - `POST /auth/login` - Logins into account and returns JWT
 
 ## Used Technologies
 
-• Java 21 - Main programming language
-• Spring Boot 3 - Web-development framework
-• Spring Security - Authentication and Authorization
-• Spring Data JPA - Database interaction management
-• PostgreSQL - Relational DBMS
-• MapStruct - To Simplify Dto mapping
-• Lombok - Provided helpful annotations
-• JWT (Json Web Token) - Authentication Token
+- Java 21 - Main programming language
+- Spring Boot 3 - Web-development framework
+- Spring Security - Authentication and Authorization
+- Spring Data JPA - Database interaction management
+- PostgreSQL - Relational DBMS
+- MapStruct - To Simplify Dto mapping
+- Lombok - Provided helpful annotations
+- JWT (Json Web Token) - Authentication Token
 
 ## Build and Run Commands
 
