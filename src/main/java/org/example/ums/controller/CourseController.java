@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static org.example.ums.util.RequestConstants.USER_ID_REQUEST_HEADER;
+import static org.example.ums.util.RequestConstants.AUTH_USER_JWT;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
@@ -39,31 +39,40 @@ public class CourseController {
     @PostMapping
     public CourseResponse create(
             @RequestBody CourseRequest courseRequest,
-            @RequestHeader(USER_ID_REQUEST_HEADER) int requesterId) {
+            @RequestHeader(AUTH_USER_JWT) String authHeader) {
 
+        String token = extractToken(authHeader);
         Course course = courseMapper.fromDto(courseRequest);
 
         return courseMapper.toDto(
-                courseService.create(course, requesterId));
+                courseService.create(course, token));
     }
 
     @PatchMapping("/{id}")
     public CourseResponse update(
             @PathVariable(name = "id") int courseId,
             @RequestBody CourseRequest courseRequest,
-            @RequestHeader(USER_ID_REQUEST_HEADER) int requesterId) {
+            @RequestHeader(AUTH_USER_JWT) String authHeader) {
 
+        String token = extractToken(authHeader);
         Course course = courseMapper.fromDto(courseRequest);
 
         return courseMapper.toDto(
-                courseService.update(courseId, course, requesterId));
+                courseService.update(courseId, course, token));
     }
 
     @DeleteMapping("/{id}")
     public void deleteById(
             @PathVariable(name = "id") int courseId,
-            @RequestHeader(USER_ID_REQUEST_HEADER) int requesterId) {
+            @RequestHeader(AUTH_USER_JWT) String authHeader) {
 
-        courseService.deleteById(courseId, requesterId);
+        String token = extractToken(authHeader);
+
+        courseService.deleteById(courseId, token);
+    }
+
+    // Util method, we clean here the "Bearer " part
+    private String extractToken(String authHeader) {
+        return authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
     }
 }

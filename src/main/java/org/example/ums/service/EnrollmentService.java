@@ -7,11 +7,11 @@ import org.example.ums.exception.ForbiddenAccessException;
 import org.example.ums.exception.NotFoundException;
 import org.example.ums.model.Course;
 import org.example.ums.model.Enrollment;
-import org.example.ums.model.Role;
 import org.example.ums.model.User;
 import org.example.ums.repository.CourseRepository;
 import org.example.ums.repository.EnrollmentRepository;
 import org.example.ums.repository.UserRepository;
+import org.example.ums.util.JwtUtil;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,30 +28,29 @@ public class EnrollmentService {
 
     CourseRepository courseRepository;
 
+    JwtUtil jwtUtil;
 
-    public List<Enrollment> findAll(int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
+    public List<Enrollment> findAll(String token) {
+        User requester = findUserByToken(token);
 
-        if (requester.getRole() == Role.STUDENT) {
-            return enrollmentRepository.findByStudent_Id(requesterId);
+        if (assertStudentRole(token)) {
+            return enrollmentRepository.findByStudent_Id(requester.getId());
         }
 
-        if (requester.getRole() == Role.ADMIN
-        || requester.getRole() == Role.TEACHER) {
+        if (assertAdminOrTeacherRole(token)) {
             return enrollmentRepository.findAll();
         }
 
         return List.of();
     }
 
-    public Enrollment findById(int enrollmentId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
+    public Enrollment findById(int enrollmentId, String token) {
+        String userEmail = jwtUtil.extractUserEmail(token);
 
         Enrollment enrollment = checkIfEnrollmentExistsById(enrollmentId);
 
-        if (requester.getRole() == Role.ADMIN
-                || requester.getRole() == Role.TEACHER
-                || enrollment.getStudent().getId() == requesterId) {
+        if (assertAdminOrTeacherRole(token)
+                || enrollment.getStudent().getEmail().equals(userEmail)) {
 
             return enrollment;
         } else {
@@ -59,13 +58,8 @@ public class EnrollmentService {
         }
     }
 
-    public Enrollment create(int studentId, int courseId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
-
-        if (requester.getRole() != Role.ADMIN
-                && requester.getRole() != Role.TEACHER) {
-            throw new ForbiddenAccessException("Insufficient rights to proceed.");
-        }
+    public Enrollment create(int studentId, int courseId, String token) {
+        assertAdminOrTeacherRoleOrElseThrow(token);
 
         User student = checkIfUserExistsById(studentId);
         Course course = checkIfCourseExistsById(courseId);
@@ -81,14 +75,8 @@ public class EnrollmentService {
         return enrollment;
     }
 
-    public Enrollment update(int enrollmentId, int studentId, int courseId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
-
-        if (requester.getRole() != Role.ADMIN
-                && requester.getRole() != Role.TEACHER) {
-            throw new ForbiddenAccessException("Insufficient rights to proceed.");
-        }
-
+    public Enrollment update(int enrollmentId, int studentId, int courseId, String token) {
+        assertAdminOrTeacherRoleOrElseThrow(token);
 
         Enrollment enrollment = checkIfEnrollmentExistsById(enrollmentId);
 
@@ -108,13 +96,8 @@ public class EnrollmentService {
         return enrollment;
     }
 
-    public void deleteById(int enrollmentId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
-
-        if (requester.getRole() != Role.ADMIN
-                && requester.getRole() != Role.TEACHER) {
-            throw new ForbiddenAccessException("Insufficient rights to proceed.");
-        }
+    public void deleteById(int enrollmentId, String token) {
+        assertAdminOrTeacherRoleOrElseThrow(token);
 
         enrollmentRepository.deleteById(enrollmentId);
     }
@@ -138,5 +121,31 @@ public class EnrollmentService {
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Course with '%d' id not found.", courseId)
                 ));
+    }
+
+    private boolean assertAdminOrTeacherRole(String token) {
+        String role = jwtUtil.extractSingleUserRole(token);
+
+        return role.equals("ROLE_ADMIN") || role.equals("ROLE_TEACHER");
+    }
+
+    private boolean assertStudentRole(String token) {
+        String role = jwtUtil.extractSingleUserRole(token);
+
+        return role.equals("ROLE_STUDENT");
+    }
+
+    private User findUserByToken(String token) {
+        String email = jwtUtil.extractUserEmail(token);
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("User with '%s' email not found", email)));
+    }
+
+    private void assertAdminOrTeacherRoleOrElseThrow(String token) {
+        if (!assertAdminOrTeacherRole(token)) {
+            throw new ForbiddenAccessException("Insufficient rights to proceed.");
+        }
     }
 }

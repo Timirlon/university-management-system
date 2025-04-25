@@ -4,5 +4,5 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class RequestConstants {
-    public static final String USER_ID_REQUEST_HEADER = "X-AUTH-USER-ID";
+    public static final String AUTH_USER_JWT = "X-AUTH-USER_JWT";
 }

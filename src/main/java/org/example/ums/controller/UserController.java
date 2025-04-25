@@ -5,18 +5,16 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ums.dto.user.UserPatchRequest;
-import org.example.ums.dto.user.UserPostRequest;
 import org.example.ums.dto.user.UserResponse;
 import org.example.ums.mapper.UserMapper;
 import org.example.ums.model.Role;
 import org.example.ums.model.User;
 import org.example.ums.service.UserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static org.example.ums.util.RequestConstants.USER_ID_REQUEST_HEADER;
+import static org.example.ums.util.RequestConstants.AUTH_USER_JWT;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
@@ -35,41 +33,43 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserResponse findById(int userId) {
+    public UserResponse findById(@PathVariable(name = "id") int userId) {
         return userMapper.toDto(
                 userService.findById(userId));
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse create(@Valid @RequestBody UserPostRequest userPostRequest) {
-        User user = userMapper.fromDto(userPostRequest);
-
-        return userMapper.toDto(
-                userService.create(user));
     }
 
     @PatchMapping("/{id}")
     public UserResponse updateCredentials(@Valid @RequestBody UserPatchRequest userPatchRequest,
                                @PathVariable(name = "id") int updateUserId,
-                               @RequestHeader(USER_ID_REQUEST_HEADER) Integer requesterId) {
+                               @RequestHeader(AUTH_USER_JWT) String authHeader) {
+        String token = extractToken(authHeader);
         User user = userMapper.fromDto(userPatchRequest);
 
         return userMapper.toDto(
-                userService.updateCredentials(user, updateUserId, requesterId));
+                userService.updateCredentials(user, updateUserId, token));
     }
 
     @PatchMapping("/role/{id}")
     public UserResponse updateRole(@RequestParam Role role,
                                    @PathVariable(name = "id") int updateUserId,
-                                   @RequestHeader(USER_ID_REQUEST_HEADER) Integer requesterId) {
+                                   @RequestHeader(AUTH_USER_JWT) String authHeader) {
+        String token = extractToken(authHeader);
+
         return userMapper.toDto(
-                userService.updateRole(role, updateUserId, requesterId));
+                userService.updateRole(role, updateUserId, token));
     }
 
     @DeleteMapping("/{id}")
     public void deleteById(@PathVariable(name = "id") int deleteUserId,
-                           @RequestHeader(USER_ID_REQUEST_HEADER) Integer requesterId) {
-        userService.deleteById(deleteUserId, requesterId);
+                           @RequestHeader(AUTH_USER_JWT) String authHeader) {
+
+        String token = extractToken(authHeader);
+
+        userService.deleteById(deleteUserId, token);
+    }
+
+    // Util method, we clean here the "Bearer " part
+    private String extractToken(String authHeader) {
+        return authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
     }
 }

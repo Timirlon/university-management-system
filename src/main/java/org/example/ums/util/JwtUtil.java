@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -30,7 +32,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    public String extractUserEmail(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
@@ -39,8 +41,40 @@ public class JwtUtil {
                 .getSubject();
     }
 
+    public List<String> extractUserRoles(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        // The authorities claim was stored as a collection of SimpleGrantedAuthority objects
+        Object authorities = claims.get("authorities");
+
+        if (authorities instanceof List<?>) {
+            return ((List<?>) authorities).stream()
+                    .map(Object::toString) // You may refine this if format is like {authority=ROLE_ADMIN}
+                    .map(authStr -> {
+                        if (authStr.contains("=")) {
+                            return authStr.split("=")[1].replace("}", "");
+                        } else {
+                            return authStr; // fallback
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        return List.of();
+    }
+
+    public String extractSingleUserRole(String token) {
+        List<String> roles = extractUserRoles(token);
+        return roles.isEmpty() ? null : roles.getFirst();
+    }
+
+
     public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
+        final String username = extractUserEmail(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 

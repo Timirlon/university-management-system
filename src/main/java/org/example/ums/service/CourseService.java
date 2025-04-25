@@ -6,10 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.example.ums.exception.ForbiddenAccessException;
 import org.example.ums.exception.NotFoundException;
 import org.example.ums.model.Course;
-import org.example.ums.model.Role;
-import org.example.ums.model.User;
 import org.example.ums.repository.CourseRepository;
-import org.example.ums.repository.UserRepository;
+import org.example.ums.util.JwtUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,7 +19,7 @@ import java.util.List;
 public class CourseService {
     CourseRepository courseRepository;
 
-    UserRepository userRepository;
+    JwtUtil jwtUtil;
 
 
     public List<Course> findAll() {
@@ -29,31 +27,21 @@ public class CourseService {
     }
 
     public Course findById(int courseId) {
-        return checkIfCourseExistsById(courseId);
+        return findCourseByIdOrElseThrow(courseId);
     }
 
-    public Course create(Course course, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
-
-        if (requester.getRole() != Role.ADMIN
-                && requester.getRole() != Role.TEACHER) {
-            throw new ForbiddenAccessException("Insufficient rights to proceed.");
-        }
+    public Course create(Course course, String token) {
+        assertAdminOrTeacherRole(token);
 
         courseRepository.save(course);
 
         return course;
     }
 
-    public Course update(int courseId, Course updateCourse, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
+    public Course update(int courseId, Course updateCourse, String token) {
+        assertAdminOrTeacherRole(token);
 
-        if (requester.getRole() != Role.ADMIN
-                && requester.getRole() != Role.TEACHER) {
-            throw new ForbiddenAccessException("Insufficient rights to proceed.");
-        }
-
-        Course oldCourse = checkIfCourseExistsById(courseId);
+        Course oldCourse = findCourseByIdOrElseThrow(courseId);
 
         if (updateCourse.getDescription() == null
                 || updateCourse.getDescription().isBlank()) {
@@ -70,29 +58,24 @@ public class CourseService {
         return updateCourse;
     }
 
-    public void deleteById(int courseId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
-
-        if (requester.getRole() != Role.ADMIN
-                && requester.getRole() != Role.TEACHER) {
-            throw new ForbiddenAccessException("Insufficient rights to proceed.");
-        }
+    public void deleteById(int courseId, String token) {
+        assertAdminOrTeacherRole(token);
 
         courseRepository.deleteById(courseId);
     }
 
-
-    private Course checkIfCourseExistsById(int courseId) {
+    private Course findCourseByIdOrElseThrow(int courseId) {
         return courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException(
                         String.format("User with '%d' id not found.", courseId)
                 ));
     }
 
-    private User checkIfUserExistsById(int userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(
-                        String.format("User with '%d' id not found.", userId)
-                ));
+    private void assertAdminOrTeacherRole(String token) {
+        String role = jwtUtil.extractSingleUserRole(token);
+
+        if (!role.equals("ROLE_ADMIN") && !role.equals("ROLE_TEACHER")) {
+            throw new ForbiddenAccessException("Insufficient rights to proceed.");
+        }
     }
 }

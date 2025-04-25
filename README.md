@@ -70,7 +70,6 @@ The application provides wide range of functionality by implementing the followi
 - **User Management:**
   - `GET /users` - Retrieve a list of all users
   - `GET /users/{id}` - Retrieve details of a specific users by id
-  - `POST /users` - Add a new user to database (`Request Body` needed)
   - `PATCH /users/{id}` - Update user credentials (`Request Body` needed)
   - `PATCH /users/role/{id}?role={role}` - Update user role (e.g. STUDENT, TEACHER, ADMIN)
   - `DELETE /students/{id}` - Remove a student by id from system

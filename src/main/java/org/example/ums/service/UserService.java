@@ -9,6 +9,7 @@ import org.example.ums.exception.NotFoundException;
 import org.example.ums.model.Role;
 import org.example.ums.model.User;
 import org.example.ums.repository.UserRepository;
+import org.example.ums.util.JwtUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +20,8 @@ import java.util.List;
 @Service
 public class UserService {
     UserRepository userRepository;
+
+    JwtUtil jwtUtil;
 
     public List<User> findAll() {
         return userRepository.findAll();
@@ -36,13 +39,13 @@ public class UserService {
         return user;
     }
 
-    public User updateCredentials(User updateUser, int updateUserId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
+    public User updateCredentials(User updateUser, int updateUserId, String token) {
+        User requester = findUserByToken(token);
 
         // if requester and user that is being updated are equal,
         // no need to issue another call to DB
         User oldUser;
-        if (updateUserId == requesterId) {
+        if (updateUserId == requester.getId()) {
             oldUser = requester;
         } else {
             oldUser = checkIfUserExistsById(updateUserId);
@@ -53,7 +56,7 @@ public class UserService {
             throw new ValidationException("Incorrect password.");
         }
 
-        if (updateUserId != requesterId && requester.getRole() != Role.ADMIN) {
+        if (updateUserId != requester.getId() && requester.getRole() != Role.ADMIN) {
             throw new ForbiddenAccessException("Insufficient rights to proceed.");
         }
 
@@ -75,8 +78,8 @@ public class UserService {
         return updateUser;
     }
 
-    public User updateRole(Role role, int updateUserId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
+    public User updateRole(Role role, int updateUserId, String token) {
+        User requester = findUserByToken(token);
 
         if (requester.getRole() != Role.ADMIN) {
             throw new ForbiddenAccessException("Insufficient rights to proceed.");
@@ -84,7 +87,7 @@ public class UserService {
 
 
         User updateUser;
-        if (updateUserId == requesterId) {
+        if (updateUserId == requester.getId()) {
             updateUser = requester;
         } else {
             updateUser = checkIfUserExistsById(updateUserId);
@@ -97,10 +100,10 @@ public class UserService {
         return updateUser;
     }
 
-    public void deleteById(int deleteUserId, int requesterId) {
-        User requester = checkIfUserExistsById(requesterId);
+    public void deleteById(int deleteUserId, String token) {
+        User requester = findUserByToken(token);
 
-        if (deleteUserId != requesterId && requester.getRole() != Role.ADMIN) {
+        if (deleteUserId != requester.getId() && requester.getRole() != Role.ADMIN) {
             throw new ForbiddenAccessException("Insufficient rights to proceed.");
         }
 
@@ -112,5 +115,13 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException(
                         String.format("User with '%d' id not found.", userId)
                 ));
+    }
+
+    private User findUserByToken(String token) {
+        String email = jwtUtil.extractUserEmail(token);
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("User with '%s' email not found", email)));
     }
 }
